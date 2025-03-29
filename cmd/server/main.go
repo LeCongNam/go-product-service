@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"product_srv/internal/database"
 	"product_srv/internal/routers"
@@ -10,9 +11,11 @@ import (
 
 func main() {
 	// Load biến môi trường từ .env
-	err := godotenv.Load(".env.dev", ".env")
+	err := godotenv.Load(".env.local", ".env.dev")
 	if err != nil {
+		fmt.Println("Error loading .env file", err)
 		log.Fatal("Error loading .env file", err)
+		return
 	}
 
 	// 👉 Gán DB vào biến Global để sử dụng ở mọi nơi
