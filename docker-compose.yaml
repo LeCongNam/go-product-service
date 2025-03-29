@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       # Nếu cần đảm bảo kiến trúc ARM64, có thể thêm:
-      platform: linux/arm64 # Chạy đúng nền tảng ARM64
+      # platform: linux/arm64 # Chạy đúng nền tảng ARM64
     container_name: go_app
     ports:
       - "3001:8080"
