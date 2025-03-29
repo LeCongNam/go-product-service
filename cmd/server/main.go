@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// Load biến môi trường từ .env
-	err := godotenv.Load(".env.local", ".env")
+	err := godotenv.(".env")
 	if err != nil {
 		fmt.Println("Error loading .env file", err)
 		log.Fatal("Error loading .env file", err)
