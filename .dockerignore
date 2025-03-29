@@ -1,0 +1,11 @@
+.idea
+.vscode
+.tmp
+
+.dockerignore 
+
+node_modules
+vendor
+.git
+Dockerfile
+docker-compose.yml
