@@ -8,13 +8,14 @@ services:
       - "3001:8080"
     depends_on:
       db:
-        condition: service_healthy # Chờ MySQL sẵn sàng
+        condition: service_healthy
     restart: unless-stopped
     env_file:
       - .env
 
   db:
-    image: mysql:oraclelinux9
+    image: mysql:8.0 # Phiên bản MySQL hỗ trợ ARM
+    platform: linux/arm64 # Chạy đúng nền tảng
     container_name: mysql_db
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -30,7 +31,7 @@ services:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       retries: 3
-      start_period: 30s # Đợi MySQL khởi động
+      start_period: 30s
 
 volumes:
   db_data:
