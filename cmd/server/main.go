@@ -12,7 +12,7 @@ func main() {
 	// Load biến môi trường từ .env
 	err := godotenv.Load(".env.dev", ".env")
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("Error loading .env file", err)
 	}
 
 	// 👉 Gán DB vào biến Global để sử dụng ở mọi nơi
