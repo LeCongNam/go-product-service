@@ -3,19 +3,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Nếu cần đảm bảo kiến trúc ARM64, có thể thêm:
+      platform: linux/arm64 # Chạy đúng nền tảng ARM64
     container_name: go_app
     ports:
       - "3001:8080"
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_healthy # Chờ MySQL sẵn sàng
     restart: unless-stopped
     env_file:
       - .env
 
   db:
-    image: mysql:8.0 # Phiên bản MySQL hỗ trợ ARM
-    platform: linux/arm64 # Chạy đúng nền tảng
+    image: mysql:8.0 # Sử dụng MySQL 8.0, phiên bản này hỗ trợ ARM64
+    platform: linux/arm64 # Chạy đúng nền tảng ARM64
     container_name: mysql_db
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword

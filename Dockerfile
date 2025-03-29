@@ -24,6 +24,7 @@ WORKDIR /root/
 
 # Copy the built application from the builder stage
 COPY --from=builder /app/main .
+# Nếu bạn muốn copy file .env vào image (lưu ý: khi dùng docker-compose env_file cũng được bind vào container)
 COPY .env .  
 
 # Expose the port the Gin app runs on
