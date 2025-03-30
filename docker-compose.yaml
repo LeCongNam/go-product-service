@@ -1,39 +1,132 @@
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      # Nếu cần đảm bảo kiến trúc ARM64, có thể thêm:
-      # platform: linux/arm64 # Chạy đúng nền tảng ARM64
-    container_name: go_app
-    ports:
-      - "3001:8080"
-    depends_on:
-      db:
-        condition: service_healthy # Chờ MySQL sẵn sàng
-    restart: unless-stopped
-    env_file:
-      - .env
+networks:
+  kong-net:
+    driver: bridge
 
-  db:
-    image: mysql:8.0 # Sử dụng MySQL 8.0, phiên bản này hỗ trợ ARM64
-    platform: linux/arm64 # Chạy đúng nền tảng ARM64
+volumes:
+  kong_data:
+  letsencrypt:
+  proxy_data:
+  db_data:
+    # Volume lưu trữ dữ liệu MySQL
+
+services:
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    environment:
+      DB_MYSQL_HOST: mysql_db
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: user
+      DB_MYSQL_PASSWORD: userpassword
+      DB_MYSQL_NAME: npm_db
+    volumes:
+      - proxy_data:/data
+      - letsencrypt:/etc/letsencrypt
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    networks:
+      - kong-net
+
+  mysql_db:
+    image: mysql:8.0
+    platform: linux/arm64 # Chạy đúng nền tảng nếu cần trên ARM64
     container_name: mysql_db
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: product_db
+      MYSQL_DATABASE: npm_db
       MYSQL_USER: user
       MYSQL_PASSWORD: userpassword
     ports:
       - "3306:3306"
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/mysql # Lưu trữ dữ liệu MySQL
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - kong-net
 
-volumes:
-  db_data:
+  kong-database:
+    image: postgres:13
+    container_name: kong-database
+    networks:
+      - kong-net
+    environment:
+      POSTGRES_USER: kong
+      POSTGRES_DB: kong
+      POSTGRES_PASSWORD: kongpass
+    volumes:
+      - kong_data:/var/lib/postgresql/data # Lưu trữ dữ liệu PostgreSQL
+    ports:
+      - "5432:5432"
+    restart: always
+
+  kong-migrations:
+    image: kong/kong-gateway:3.10.0.0
+    networks:
+      - kong-net
+    depends_on:
+      - kong-database
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kongpass
+      KONG_PASSWORD: test
+    command: kong migrations bootstrap
+    restart: on-failure
+
+  kong-gateway:
+    image: kong/kong-gateway:3.10.0.0
+    container_name: kong-gateway
+    networks:
+      - kong-net
+    depends_on:
+      - kong-database
+      - kong-migrations
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kongpass
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+      - "8001:8001"
+      - "8444:8444"
+      - "8002:8002"
+      - "8445:8445"
+      - "8003:8003"
+      - "8004:8004"
+    restart: always
+
+  go_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go_app
+    ports:
+      - "3001:8080"
+    depends_on:
+      mysql_db:
+        condition: service_healthy # Chờ MySQL sẵn sàng
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - kong-net

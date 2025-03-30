@@ -20,7 +20,7 @@ type GetList struct {
 
 // NewUserRepository - Inject DB vào BaseRepository
 func NewUserRepository() *UserRepository {
-	return &UserRepository{DB: database.DB}
+	return &UserRepository{DB: database.ConnectDB()} // Ensure database.Database() returns a pointer
 }
 
 // GetListUser - Lấy danh sách user từ DB
