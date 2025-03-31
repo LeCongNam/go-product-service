@@ -6,6 +6,7 @@ import (
 	"os"
 	"product_srv/internal/database"
 	"product_srv/internal/routers"
+	"strconv"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -36,14 +37,19 @@ func main() {
 
 	r := routers.InitRouter()
 
+	PORT, err := strconv.Atoi(os.Getenv("PORT"))
+	if err != nil {
+		log.Fatal("❌ Invalid PORT value:", err)
+	}
+
 	go func() {
 		defer wg.Done() // Nếu có lỗi, server dừng lại thì sẽ giải phóng WaitGroup
-		if err := r.Run(":8080"); err != nil {
+		if err := r.Run(fmt.Sprintf(":%d", PORT)); err != nil {
 			log.Fatal("❌ Server failed to start:", err)
 		}
 	}()
 
-	fmt.Println("✅ Server is running on port 8080")
+	fmt.Printf("🚀 Server is running on port %d\n", PORT)
 
 	wg.Wait() // Chờ server chạy
 
